@@ -1,65 +1,54 @@
 <?php
 
-namespace Dao\Mascotas;
-
-use Dao\Table;
-
-class MascotasModelo extends Table
+class MascotasModelo
 {
-    public static function obtenerTodos(): array
+    private static function getDb()
     {
-        $sql = "SELECT * FROM mascotas";
-        return self::obtenerRegistros($sql, []);
+        return new PDO(
+            "mysql:host=localhost;dbname=tu_base",
+            "root",
+            ""
+        );
     }
 
-    public static function obtenerPorId(int $mascota_id): array
+    public static function obtenerTodos()
     {
-        $sql = "SELECT * FROM mascotas WHERE mascota_id = :mascota_id";
-        return self::obtenerUnRegistro($sql, ["mascota_id" => $mascota_id]);
+        $db = self::getDb();
+        return $db->query("SELECT * FROM mascotas")->fetchAll(PDO::FETCH_ASSOC);
     }
 
-    public static function crear(
-        string $nombre,
-        string $especie,
-        int $edad,
-        string $estado
-    ) {
-        $sql = "INSERT INTO mascotas
-                (nombre, especie, edad, estado)
-                VALUES
-                (:nombre, :especie, :edad, :estado)";
-
-        return self::executeNonQuery($sql, [
-            "nombre" => $nombre,
-            "especie" => $especie,
-            "edad" => $edad,
-            "estado" => $estado
-        ]);
-    }
-
-    public static function actualizar(
-        int $mascota_id,
-        string $nombre,
-        string $especie,
-        int $edad,
-        string $estado
-    ) {
-        $sql = "UPDATE mascotas SET
-                nombre = :nombre,
-                especie = :especie,
-                edad = :edad,
-                estado = :estado
-                WHERE mascota_id = :mascota_id";
-
-        return self::executeNonQuery($sql, [
-            "mascota_id" => $mascota_id,
-            "nombre" => $nombre,
-            "especie" => $especie,
-            "edad" => $edad,
-            "estado" => $estado
-        ]);
-    }
-
-    public static function eliminar(int $mascota_id)
+    public static function obtenerPorId($id)
     {
-        $sql = "DELETE FROM mascotas WHERE mascota_i_
+        $db = self::getDb();
+        $stm = $db->prepare("SELECT * FROM mascotas WHERE mascota_id = ?");
+        $stm->execute([$id]);
+        return $stm->fetch(PDO::FETCH_ASSOC);
+    }
+
+    public static function insertar($nombre, $especie, $edad, $estado)
+    {
+        $db = self::getDb();
+        $stm = $db->prepare(
+            "INSERT INTO mascotas (nombre, especie, edad, estado)
+             VALUES (?, ?, ?, ?)"
+        );
+        return $stm->execute([$nombre, $especie, $edad, $estado]);
+    }
+
+    public static function actualizar($id, $nombre, $especie, $edad, $estado)
+    {
+        $db = self::getDb();
+        $stm = $db->prepare(
+            "UPDATE mascotas SET nombre=?, especie=?, edad=?, estado=?
+             WHERE mascota_id=?"
+        );
+        return $stm->execute([$nombre, $especie, $edad, $estado, $id]);
+    }
+
+    public static function eliminar($id)
+    {
+        $db = self::getDb();
+        $stm = $db->prepare("DELETE FROM mascotas WHERE mascota_id=?");
+        return $stm->execute([$id]);
+    }
+}
